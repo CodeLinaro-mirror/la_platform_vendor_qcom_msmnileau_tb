@@ -1,9 +1,10 @@
+ENABLE_AB ?= true
 # Enable AVB 2.0
 BOARD_AVB_ENABLE := true
 BOARD_USES_QCNE := false
 TARGET_BOARD_AUTO := true
 TARGET_USES_AOSP := true
-TARGET_USES_AOSP_FOR_AUDIO := true
+TARGET_USES_AOSP_FOR_AUDIO := false
 TARGET_USES_QCOM_BSP := false
 TARGET_NO_TELEPHONY := true
 TARGET_NO_QC_PARSER := true
@@ -16,9 +17,43 @@ TARGET_NO_QTI_WFD := true
 BOARD_HAVE_QCOM_FM := false
 TARGET_DISABLE_PERF_OPTIMIATIONS := true
 BOARD_VENDOR_QCOM_LOC_PDK_FEATURE_SET := false
-TARGET_ENABLE_QC_AV_ENHANCEMENTS := false
-TARGET_USES_AOSP_FOR_WLAN := true
+TARGET_ENABLE_QC_AV_ENHANCEMENTS := true
+TARGET_USES_AOSP_FOR_WLAN := false
 ENABLE_CAR_POWER_MANAGER := true
+ENABLE_MODEM_DATA := true
+TARGET_FWK_SUPPORTS_AV_VALUEADDS := true
+
+# Dynamic-partition enabled by default
+BOARD_DYNAMIC_PARTITION_ENABLE := true
+ifeq ($(strip $(BOARD_DYNAMIC_PARTITION_ENABLE)),true)
+PRODUCT_USE_DYNAMIC_PARTITIONS := true
+BOARD_BUILD_SUPER_IMAGE_BY_DEFAULT := true
+PRODUCT_BUILD_SUPER_PARTITION := true
+PRODUCT_PACKAGES += fastbootd
+
+BOARD_AVB_VBMETA_SYSTEM := system
+BOARD_AVB_VBMETA_SYSTEM_KEY_PATH := external/avb/test/data/testkey_rsa2048.pem
+BOARD_AVB_VBMETA_SYSTEM_ALGORITHM := SHA256_RSA2048
+BOARD_AVB_VBMETA_SYSTEM_ROLLBACK_INDEX := $(PLATFORM_SECURITY_PATCH_TIMESTAMP)
+BOARD_AVB_VBMETA_SYSTEM_ROLLBACK_INDEX_LOCATION := 2
+
+ifeq ($(ENABLE_AB), true)
+PRODUCT_COPY_FILES += $(LOCAL_PATH)/fstab_AB_dynamic_partition_variant.qti:$(TARGET_COPY_OUT_RAMDISK)/fstab.qcom
+else
+PRODUCT_COPY_FILES += $(LOCAL_PATH)/fstab_non_AB_dynamic_partition_variant.qti:$(TARGET_COPY_OUT_RAMDISK)/fstab.qcom
+endif
+endif
+#PRODUCT_BUILD_SYSTEM_IMAGE := true
+PRODUCT_BUILD_SYSTEM_OTHER_IMAGE := false
+#PRODUCT_BUILD_VENDOR_IMAGE := true
+PRODUCT_BUILD_PRODUCT_IMAGE := false
+PRODUCT_BUILD_PRODUCT_SERVICES_IMAGE := false
+#PRODUCT_BUILD_ODM_IMAGE := true
+PRODUCT_BUILD_CACHE_IMAGE := false
+PRODUCT_BUILD_RAMDISK_IMAGE := true
+PRODUCT_BUILD_USERDATA_IMAGE := true
+
+
 
 TARGET_DEFINES_DALVIK_HEAP := true
 $(call inherit-product, device/qcom/common/common64.mk)
@@ -38,6 +73,26 @@ PRODUCT_MODEL := msmnile_tb for arm64
 
 #Initial bringup flags
 
+ifneq (,$(filter true, $(TARGET_FWK_SUPPORTS_FULL_VALUEADDS)$(TARGET_BOARD_AUTO)))
+  $(warning "Compiling with full value-added framework or for AUTO Platform")
+else
+  $(warning "Compiling without full value-added framework - enabling GENERIC_ODM_IMAGE")
+  GENERIC_ODM_IMAGE := true
+endif
+
+# Enable Codec2.0 HAL as default for pure AOSP variants.
+# WA till ODM properties start taking effect
+ifeq ($(GENERIC_ODM_IMAGE),true)
+  $(warning "Forcing codec2.0 for generic odm build variant")
+  PRODUCT_PROPERTY_OVERRIDES += debug.media.codec2=2
+  PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.ccodec=4
+  PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank=1000
+else
+  $(warning "Enabling codec2.0 SW only for non-generic odm build variant")
+  #Rank OMX SW codecs lower than OMX HW codecs
+  PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank.sw-audio=1
+  PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank=0
+endif
 #Default vendor image configuration
 ifeq ($(ENABLE_VENDOR_IMAGE),)
 ENABLE_VENDOR_IMAGE := false
@@ -87,17 +142,8 @@ endif
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml
 
-# Video codec configuration files
-ifeq ($(TARGET_ENABLE_QC_AV_ENHANCEMENTS), true)
-PRODUCT_COPY_FILES += device/qcom/msmnile/media_profiles.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles_vendor.xml
-
-PRODUCT_COPY_FILES += device/qcom/msmnile/media_codecs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs.xml
-PRODUCT_COPY_FILES += device/qcom/msmnile/media_codecs_vendor.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor.xml
-
-PRODUCT_COPY_FILES += device/qcom/msmnile/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml
-
-PRODUCT_COPY_FILES += device/qcom/msmnile/media_codecs_performance.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance.xml
-endif #TARGET_ENABLE_QC_AV_ENHANCEMENTS
+#Audio sample file for early services
+PRODUCT_COPY_FILES += device/qcom/msmnile_au/bike_bell.wav:$(TARGET_COPY_OUT_VENDOR)/etc/bike_bell.wav
 
 PRODUCT_COPY_FILES += hardware/qcom/media/conf_files/msmnile/system_properties.xml:$(TARGET_COPY_OUT_VENDOR)/etc/system_properties.xml
 
@@ -182,10 +228,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.midi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.midi.xml
 
-# OEM unlock feature
-PRODUCT_COPY_FILES += \
-    frameworks/native/data/etc/android.hardware.telephony.carrierlock.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.telephony.carrierlock.xml
-
 # USB default HAL
 PRODUCT_PACKAGES += \
     android.hardware.usb@1.0-service
@@ -197,7 +239,7 @@ PRODUCT_PACKAGES += \
 
 # Kernel modules install path
 KERNEL_MODULES_INSTALL := dlkm
-KERNEL_MODULES_OUT := out/target/product/msmnile_au/$(KERNEL_MODULES_INSTALL)/lib/modules
+KERNEL_MODULES_OUT := out/target/product/msmnile_tb/$(KERNEL_MODULES_INSTALL)/lib/modules
 
 #FEATURE_OPENGLES_EXTENSION_PACK support string config file
 PRODUCT_COPY_FILES += \
@@ -235,10 +277,6 @@ ifeq ($(strip $(BOARD_HAS_QCOM_WLAN)),true)
 TARGET_WLAN_CHIP := qca6174 qca6390 qcn7605
 include device/qcom/wlan/msmnile_au/wlan.mk
 endif
-
-#for Emac
-PRODUCT_PACKAGES += \
-    emac_perf_settings.sh
 
 # CAN utils
 PRODUCT_PACKAGES += candump \

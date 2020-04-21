@@ -18,6 +18,7 @@ TARGET_DISABLE_PERF_OPTIMIATIONS := true
 BOARD_VENDOR_QCOM_LOC_PDK_FEATURE_SET := false
 TARGET_ENABLE_QC_AV_ENHANCEMENTS := false
 TARGET_USES_AOSP_FOR_WLAN := true
+TARGET_USES_GAS := false
 ENABLE_CAR_POWER_MANAGER := true
 
 TARGET_DEFINES_DALVIK_HEAP := true
@@ -29,7 +30,6 @@ PRODUCT_PROPERTY_OVERRIDES  += \
 	dalvik.vm.heaptargetutilization=0.75 \
 	dalvik.vm.heapminfree=512k \
 	dalvik.vm.heapmaxfree=8m
-$(call inherit-product, packages/services/Car/car_product/build/car.mk)
 
 PRODUCT_NAME := msmnile_tb
 PRODUCT_DEVICE := msmnile_tb

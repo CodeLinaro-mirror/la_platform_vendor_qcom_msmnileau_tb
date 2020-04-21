@@ -88,7 +88,7 @@ persist.vendor.btstack.enable.splita2dp=false
 persist.vendor.service.bdroid.sibs=false
 
 #system prop for Hardware type Automotive
-ro.hardware.type=automotive
+#ro.hardware.type=automotive
 
 #
 #snapdragon value add features

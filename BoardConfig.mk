@@ -39,16 +39,16 @@ TARGET_BOARD_PLATFORM := msmnile
 TARGET_BOOTLOADER_BOARD_NAME := msmnile
 export TARGET_BOARD_TYPE := auto
 TARGET_BOARD_SUFFIX := _tb
+BOARD_SUPPORTS_EARLY_INIT := true
+ifeq ($(BOARD_SUPPORTS_EARLY_INIT),true)
+export CONFIG_EARLY_INIT := true
+endif
 
 TARGET_ARCH := arm64
 TARGET_ARCH_VARIANT := armv8-a
 TARGET_CPU_ABI := arm64-v8a
 TARGET_CPU_ABI2 :=
 TARGET_CPU_VARIANT := generic
-BOARD_SUPPORTS_EARLY_INIT := true
-ifeq ($(BOARD_SUPPORTS_EARLY_INIT),true)
-export CONFIG_EARLY_INIT := true
-endif
 
 TARGET_2ND_ARCH := arm
 TARGET_2ND_ARCH_VARIANT := armv7-a-neon
@@ -102,12 +102,7 @@ ifneq ($(AB_OTA_UPDATER),true)
     TARGET_RECOVERY_UPDATER_LIBS += librecovery_updater_msm
 endif
 
-ifneq ($(strip $(BOARD_DYNAMIC_PARTITION_ENABLE)),true)
-  TARGET_RECOVERY_FSTAB := device/qcom/msmnile/fstab.qcom
-else
-  TARGET_RECOVERY_FSTAB := device/qcom/msmnile/fstab.qcom
-endif
-
+TARGET_RECOVERY_FSTAB := device/qcom/msmnile_au/fstab.qcom
 
 #Enable split vendor image
 ENABLE_VENDOR_IMAGE := true

@@ -4,7 +4,7 @@ BOARD_AVB_ENABLE := true
 BOARD_USES_QCNE := false
 TARGET_BOARD_AUTO := true
 TARGET_USES_AOSP := true
-TARGET_USES_AOSP_FOR_AUDIO := true
+TARGET_USES_AOSP_FOR_AUDIO := false
 TARGET_USES_QCOM_BSP := false
 TARGET_NO_TELEPHONY := true
 TARGET_NO_QC_PARSER := true
@@ -17,14 +17,14 @@ TARGET_NO_QTI_WFD := true
 BOARD_HAVE_QCOM_FM := false
 TARGET_DISABLE_PERF_OPTIMIATIONS := true
 BOARD_VENDOR_QCOM_LOC_PDK_FEATURE_SET := false
-TARGET_ENABLE_QC_AV_ENHANCEMENTS := false
+TARGET_ENABLE_QC_AV_ENHANCEMENTS := true
 TARGET_USES_AOSP_FOR_WLAN := false
 ENABLE_CAR_POWER_MANAGER := true
 ENABLE_MODEM_DATA := true
-#TARGET_USES_GAS := true
+TARGET_FWK_SUPPORTS_AV_VALUEADDS := true
 
 # Dynamic-partition enabled by default
-BOARD_DYNAMIC_PARTITION_ENABLE := false
+BOARD_DYNAMIC_PARTITION_ENABLE := true
 ifeq ($(strip $(BOARD_DYNAMIC_PARTITION_ENABLE)),true)
 PRODUCT_USE_DYNAMIC_PARTITIONS := true
 BOARD_BUILD_SUPER_IMAGE_BY_DEFAULT := true
@@ -73,6 +73,26 @@ PRODUCT_MODEL := msmnile_tb for arm64
 
 #Initial bringup flags
 
+ifneq (,$(filter true, $(TARGET_FWK_SUPPORTS_FULL_VALUEADDS)$(TARGET_BOARD_AUTO)))
+  $(warning "Compiling with full value-added framework or for AUTO Platform")
+else
+  $(warning "Compiling without full value-added framework - enabling GENERIC_ODM_IMAGE")
+  GENERIC_ODM_IMAGE := true
+endif
+
+# Enable Codec2.0 HAL as default for pure AOSP variants.
+# WA till ODM properties start taking effect
+ifeq ($(GENERIC_ODM_IMAGE),true)
+  $(warning "Forcing codec2.0 for generic odm build variant")
+  PRODUCT_PROPERTY_OVERRIDES += debug.media.codec2=2
+  PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.ccodec=4
+  PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank=1000
+else
+  $(warning "Enabling codec2.0 SW only for non-generic odm build variant")
+  #Rank OMX SW codecs lower than OMX HW codecs
+  PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank.sw-audio=1
+  PRODUCT_PROPERTY_OVERRIDES += debug.stagefright.omx_default_rank=0
+endif
 #Default vendor image configuration
 ifeq ($(ENABLE_VENDOR_IMAGE),)
 ENABLE_VENDOR_IMAGE := false
@@ -122,17 +142,8 @@ endif
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml
 
-# Video codec configuration files
-ifeq ($(TARGET_ENABLE_QC_AV_ENHANCEMENTS), true)
-PRODUCT_COPY_FILES += device/qcom/msmnile/media_profiles.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles_vendor.xml
-
-PRODUCT_COPY_FILES += device/qcom/msmnile/media_codecs.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs.xml
-PRODUCT_COPY_FILES += device/qcom/msmnile/media_codecs_vendor.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor.xml
-
-PRODUCT_COPY_FILES += device/qcom/msmnile/media_codecs_vendor_audio.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_vendor_audio.xml
-
-PRODUCT_COPY_FILES += device/qcom/msmnile/media_codecs_performance.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance.xml
-endif #TARGET_ENABLE_QC_AV_ENHANCEMENTS
+#Audio sample file for early services
+PRODUCT_COPY_FILES += device/qcom/msmnile_au/bike_bell.wav:$(TARGET_COPY_OUT_VENDOR)/etc/bike_bell.wav
 
 PRODUCT_COPY_FILES += hardware/qcom/media/conf_files/msmnile/system_properties.xml:$(TARGET_COPY_OUT_VENDOR)/etc/system_properties.xml
 
@@ -228,7 +239,7 @@ PRODUCT_PACKAGES += \
 
 # Kernel modules install path
 KERNEL_MODULES_INSTALL := dlkm
-KERNEL_MODULES_OUT := out/target/product/msmnile_au/$(KERNEL_MODULES_INSTALL)/lib/modules
+KERNEL_MODULES_OUT := out/target/product/msmnile_tb/$(KERNEL_MODULES_INSTALL)/lib/modules
 
 #FEATURE_OPENGLES_EXTENSION_PACK support string config file
 PRODUCT_COPY_FILES += \

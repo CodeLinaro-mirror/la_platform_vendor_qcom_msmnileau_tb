@@ -582,24 +582,32 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     <hal format="hidl">
         <name>vendor.qti.hardware.vpp</name>
         <transport>hwbinder</transport>
-        <version>1.2</version>
+        <version>1.3</version>
         <interface>
             <name>IHidlVppService</name>
             <instance>vppService</instance>
         </interface>
     </hal>
     <!-- WFD HAL Service -->
-    <hal format="hidl">
-        <name>com.qualcomm.qti.wifidisplayhal</name>
+    <hal format="hidl" optional="true">
+        <name>vendor.qti.hardware.wifidisplaysession</name>
         <transport>hwbinder</transport>
         <version>1.0</version>
         <interface>
-            <name>IHDCPSession</name>
-            <instance>wifidisplayhdcphal</instance>
+            <name>IWifiDisplaySession</name>
+            <instance>wifidisplaysession</instance>
         </interface>
         <interface>
-            <name>IDSManager</name>
-            <instance>wifidisplaydshal</instance>
+            <name>IWifiDisplaySessionVideoTrack</name>
+            <instance>wifidisplaysessionvideotrack</instance>
+        </interface>
+        <interface>
+            <name>IWifiDisplaySessionAudioTrack</name>
+            <instance>wifidisplaysessionaudiotrack</instance>
+        </interface>
+        <interface>
+            <name>IWifiDisplaySessionImageTrack</name>
+            <instance>wifidisplaysessionimagetrack</instance>
         </interface>
     </hal>
     <!-- USB HAL -->
@@ -758,6 +766,16 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <interface>
             <name>IObjectTracker</name>
             <instance>objectTracker</instance>
+        </interface>
+    </hal>
+    <!-- CapabilityConfigStore HAL Service  -->
+    <hal format="hidl">
+        <name>vendor.qti.hardware.capabilityconfigstore</name>
+        <transport>hwbinder</transport>
+        <version>1.0</version>
+        <interface>
+            <name>ICapabilityConfigStore</name>
+            <instance>default</instance>
         </interface>
     </hal>
     <hal format="hidl">

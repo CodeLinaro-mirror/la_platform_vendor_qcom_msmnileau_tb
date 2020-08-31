@@ -64,7 +64,7 @@ PRODUCT_PROPERTY_OVERRIDES  += \
 	dalvik.vm.heaptargetutilization=0.75 \
 	dalvik.vm.heapminfree=512k \
 	dalvik.vm.heapmaxfree=8m
-$(call inherit-product, packages/services/Car/car_product/build/car.mk)
+#$(call inherit-product, packages/services/Car/car_product/build/car.mk)
 
 PRODUCT_NAME := msmnile_tb
 PRODUCT_DEVICE := msmnile_tb

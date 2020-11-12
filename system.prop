@@ -86,6 +86,8 @@ ro.bluetooth.wipower=false
 persist.vendor.service.bt.a2dp.sink=false
 persist.vendor.btstack.enable.splita2dp=false
 persist.vendor.service.bdroid.sibs=false
+persist.bluetooth.a2dp_offload.disabled=true
+persist.bluetooth.bluetooth_audio_hal.disabled=true
 
 #system prop for Hardware type Automotive
 #ro.hardware.type=automotive

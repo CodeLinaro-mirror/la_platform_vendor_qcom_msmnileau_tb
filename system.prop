@@ -83,7 +83,7 @@ ro.bluetooth.emb_wp_mode=false
 ro.bluetooth.wipower=false
 #ro.bluetooth.library_name=libbluetooth_qti.so
 
-persist.vendor.service.bt.a2dp.sink=true
+persist.vendor.service.bt.a2dp.sink=false
 persist.vendor.btstack.enable.splita2dp=false
 persist.vendor.service.bdroid.sibs=false
 

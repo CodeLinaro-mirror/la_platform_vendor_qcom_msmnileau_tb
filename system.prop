@@ -201,3 +201,7 @@ persist.vendor.car.lpm=true
 
 # set BT AVRCP prop to false
 persist.bluetooth.enablenewavrcp=false
+#disable Telephony
+ro.radio.noril=true
+
+ro.surface_flinger.protected_contents=true

@@ -1,25 +1,61 @@
+ENABLE_AB ?= true
+# Enable virtual-ab by default
+ifeq ($(ENABLE_AB), true)
+  ENABLE_VIRTUAL_AB ?= true
+endif
+ifeq ($(ENABLE_VIRTUAL_AB), true)
+  $(call inherit-product, $(SRC_TARGET_DIR)/product/virtual_ab_ota.mk)
+endif
+
 # Enable AVB 2.0
 BOARD_AVB_ENABLE := true
-BOARD_USES_QCNE := false
 TARGET_BOARD_AUTO := true
 TARGET_USES_AOSP := true
 TARGET_USES_AOSP_FOR_AUDIO := true
 TARGET_USES_QCOM_BSP := false
 TARGET_NO_TELEPHONY := true
-TARGET_NO_QC_PARSER := true
-TARGET_NO_QTI_MPGEN := true
 TARGET_USES_QTIC := false
 TARGET_USES_QTIC_EXTENSION := false
 ENABLE_HYP := false
 BOARD_HAS_QCOM_WLAN := true
 TARGET_NO_QTI_WFD := true
 BOARD_HAVE_QCOM_FM := false
-TARGET_DISABLE_PERF_OPTIMIATIONS := true
 BOARD_VENDOR_QCOM_LOC_PDK_FEATURE_SET := false
 TARGET_ENABLE_QC_AV_ENHANCEMENTS := false
+TARGET_FWK_SUPPORTS_AV_VALUEADDS := false
 TARGET_USES_AOSP_FOR_WLAN := true
-TARGET_USES_GAS := false
 ENABLE_CAR_POWER_MANAGER := true
+# Dynamic-partition enabled by default
+BOARD_DYNAMIC_PARTITION_ENABLE := true
+ifeq ($(strip $(BOARD_DYNAMIC_PARTITION_ENABLE)),true)
+PRODUCT_USE_DYNAMIC_PARTITIONS := true
+BOARD_BUILD_SUPER_IMAGE_BY_DEFAULT := true
+PRODUCT_BUILD_SUPER_PARTITION := true
+PRODUCT_PACKAGES += fastbootd
+
+BOARD_AVB_VBMETA_SYSTEM := system
+BOARD_AVB_VBMETA_SYSTEM_KEY_PATH := external/avb/test/data/testkey_rsa2048.pem
+BOARD_AVB_VBMETA_SYSTEM_ALGORITHM := SHA256_RSA2048
+BOARD_AVB_VBMETA_SYSTEM_ROLLBACK_INDEX := $(PLATFORM_SECURITY_PATCH_TIMESTAMP)
+BOARD_AVB_VBMETA_SYSTEM_ROLLBACK_INDEX_LOCATION := 2
+
+ifeq ($(ENABLE_AB), true)
+PRODUCT_COPY_FILES += $(LOCAL_PATH)/fstab_AB_dynamic_partition_variant.qti:$(TARGET_COPY_OUT_RAMDISK)/fstab.qcom
+else
+PRODUCT_COPY_FILES += $(LOCAL_PATH)/fstab_non_AB_dynamic_partition_variant.qti:$(TARGET_COPY_OUT_RAMDISK)/fstab.qcom
+endif
+endif
+#PRODUCT_BUILD_SYSTEM_IMAGE := true
+PRODUCT_BUILD_SYSTEM_OTHER_IMAGE := false
+#PRODUCT_BUILD_VENDOR_IMAGE := true
+PRODUCT_BUILD_PRODUCT_IMAGE := false
+PRODUCT_BUILD_PRODUCT_SERVICES_IMAGE := false
+#PRODUCT_BUILD_ODM_IMAGE := true
+PRODUCT_BUILD_CACHE_IMAGE := false
+PRODUCT_BUILD_RAMDISK_IMAGE := true
+PRODUCT_BUILD_USERDATA_IMAGE := true
+
+
 
 TARGET_DEFINES_DALVIK_HEAP := true
 $(call inherit-product, device/qcom/common/common64.mk)
@@ -30,6 +66,7 @@ PRODUCT_PROPERTY_OVERRIDES  += \
 	dalvik.vm.heaptargetutilization=0.75 \
 	dalvik.vm.heapminfree=512k \
 	dalvik.vm.heapmaxfree=8m
+#$(call inherit-product, packages/services/Car/car_product/build/car.mk)
 
 PRODUCT_NAME := msmnile_tb
 PRODUCT_DEVICE := msmnile_tb
@@ -43,13 +80,18 @@ ifeq ($(ENABLE_VENDOR_IMAGE),)
 ENABLE_VENDOR_IMAGE := false
 endif
 
-TARGET_KERNEL_VERSION := 4.14
+TARGET_KERNEL_VERSION := 5.4
+
+TARGET_HAS_GENERIC_KERNEL_HEADERS := true
 
 #Enable llvm support for kernel
 KERNEL_LLVM_SUPPORT := true
 
 #Enable sd-llvm suppport for kernel
 KERNEL_SD_LLVM_SUPPORT := false
+
+# diag-router
+TARGET_HAS_DIAG_ROUTER := true
 
 # default is nosdcard, S/W button enabled in resource
 PRODUCT_CHARACTERISTICS := nosdcard
@@ -87,6 +129,13 @@ endif
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.ethernet.xml:system/etc/permissions/android.hardware.ethernet.xml
 
+# Copy the testscripts from the qssi folder as it was moved to QSSI folder.
+PRODUCT_COPY_FILES += \
+    device/qcom/qssi/init.qcom.testscripts.sh:system/etc/init.qcom.testscripts.sh
+
+#Audio sample file for early services
+PRODUCT_COPY_FILES += device/qcom/msmnile_tb/bike_bell.wav:$(TARGET_COPY_OUT_VENDOR)/etc/bike_bell.wav
+
 # Video codec configuration files
 ifeq ($(TARGET_ENABLE_QC_AV_ENHANCEMENTS), true)
 PRODUCT_COPY_FILES += device/qcom/msmnile/media_profiles.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_profiles_vendor.xml
@@ -99,7 +148,7 @@ PRODUCT_COPY_FILES += device/qcom/msmnile/media_codecs_vendor_audio.xml:$(TARGET
 PRODUCT_COPY_FILES += device/qcom/msmnile/media_codecs_performance.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_performance.xml
 endif #TARGET_ENABLE_QC_AV_ENHANCEMENTS
 
-PRODUCT_COPY_FILES += hardware/qcom/media/conf_files/msmnile/system_properties.xml:$(TARGET_COPY_OUT_VENDOR)/etc/system_properties.xml
+#PRODUCT_COPY_FILES += hardware/qcom/media/conf_files/msmnile/system_properties.xml:$(TARGET_COPY_OUT_VENDOR)/etc/system_properties.xml
 
 PRODUCT_PACKAGES += android.hardware.media.omx@1.0-impl
 
@@ -119,6 +168,12 @@ AUDIO_DLKM += audio_native.ko
 AUDIO_DLKM += audio_machine_msmnile.ko
 PRODUCT_PACKAGES += $(AUDIO_DLKM)
 
+PCIE_DLKM := pci_msm_drv
+PRODUCT_PACKAGES += $(PCIE_DLKM)
+
+CNSS_DLKM := cnss2
+PRODUCT_PACKAGES += $(CNSS_DLKM)
+
 # HS-I2S DLKM
 PRODUCT_PACKAGES += hsi2s.ko
 # HS-I2S test app
@@ -131,8 +186,12 @@ PRODUCT_PACKAGES += update_engine \
     update_engine_client \
     update_verifier \
     bootctrl.msmnile \
-    android.hardware.boot@1.0-impl \
-    android.hardware.boot@1.0-service
+    android.hardware.boot@1.1-impl-qti \
+    android.hardware.boot@1.1-impl-qti.recovery \
+    android.hardware.boot@1.1-service
+
+PRODUCT_PACKAGES += \
+    update_engine_sideload
 
 PRODUCT_HOST_PACKAGES += \
 	brillo_update_payload
@@ -144,9 +203,13 @@ PRODUCT_PACKAGES_DEBUG += bootctl
 PRODUCT_PACKAGES += \
     libhealthd.msm
 
+PRODUCT_COPY_FILES += \
+    device/qcom/msmnile_au/task_profiles.json:$(TARGET_COPY_OUT_VENDOR)/etc/task_profiles.json
+
 # MTMD enablement
 PRODUCT_COPY_FILES += \
-    device/qcom/msmnile_au/input-port-associations.xml:$(TARGET_COPY_OUT_VENDOR)/etc/input-port-associations.xml
+    device/qcom/msmnile_tb/input-port-associations.xml:$(TARGET_COPY_OUT_VENDOR)/etc/input-port-associations.xml \
+    device/qcom/msmnile_tb/display_settings.xml:$(TARGET_COPY_OUT_VENDOR)/etc/display_settings.xml
 
 
 DEVICE_MANIFEST_FILE := device/qcom/msmnile_tb/manifest.xml
@@ -154,41 +217,41 @@ DEVICE_MATRIX_FILE   := device/qcom/common/compatibility_matrix.xml
 DEVICE_FRAMEWORK_MANIFEST_FILE := device/qcom/msmnile_tb/framework_manifest.xml
 DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE := vendor/qcom/opensource/core-utils/vendor_framework_compatibility_matrix.xml
 
+## Enable Scoped Storage related
+$(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
 
 #ANT+ stack
-PRODUCT_PACKAGES += \
-    AntHalService \
-    libantradio \
-    antradio_app \
-    libvolumelistener
+#PRODUCT_PACKAGES += \
+#    AntHalService \
+#    libantradio \
+#    antradio_app \
+#    libvolumelistener
 
 # Display/Graphics
 PRODUCT_PACKAGES += \
-    android.hardware.configstore@1.2-service \
     android.hardware.broadcastradio@1.0-impl
 
+# Automotive display service
+PRODUCT_PACKAGES += android.frameworks.automotive.display@1.0-service
 
 # MSM IRQ Balancer configuration file
 PRODUCT_COPY_FILES += device/qcom/msmnile/msm_irqbalance.conf:$(TARGET_COPY_OUT_VENDOR)/etc/msm_irqbalance.conf
 
 
 
-# Context hub HAL
-PRODUCT_PACKAGES += \
-    android.hardware.contexthub@1.0-impl.generic \
-    android.hardware.contexthub@1.0-service
+
 
 # MIDI feature
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.software.midi.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.software.midi.xml
 
+#Copy unsupported features list
+PRODUCT_COPY_FILES += \
+    device/qcom/msmnile_tb/msmnile_tb_excluded_features.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/msmnile_tb_excluded_features.xml
+
 # OEM unlock feature
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.telephony.carrierlock.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.telephony.carrierlock.xml
-
-# USB default HAL
-PRODUCT_PACKAGES += \
-    android.hardware.usb@1.0-service
 
 PRODUCT_PACKAGES += \
        openavb_harness \
@@ -197,30 +260,21 @@ PRODUCT_PACKAGES += \
 
 # Kernel modules install path
 KERNEL_MODULES_INSTALL := dlkm
-KERNEL_MODULES_OUT := out/target/product/msmnile_au/$(KERNEL_MODULES_INSTALL)/lib/modules
+KERNEL_MODULES_OUT := out/target/product/msmnile_tb/$(KERNEL_MODULES_INSTALL)/lib/modules
 
 #FEATURE_OPENGLES_EXTENSION_PACK support string config file
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.opengles.aep.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.opengles.aep.xml
-
-#Exclude vibrator from InputManager
-PRODUCT_COPY_FILES += \
-    device/qcom/msmnile/excluded-input-devices.xml:system/etc/excluded-input-devices.xml
 
 #Enable full treble flag
 PRODUCT_FULL_TREBLE_OVERRIDE := true
 PRODUCT_VENDOR_MOVE_ENABLED := true
 PRODUCT_COMPATIBLE_PROPERTY_OVERRIDE := true
 
-KMGK_USE_QTI_SERVICE := true
-
-#Enable KEYMASTER 4.0
-ENABLE_KM_4_0 := true
-
 #Enable vndk-sp Libraries
 PRODUCT_PACKAGES += vndk_package
 
-DEVICE_PACKAGE_OVERLAYS += device/qcom/msmnile_au/overlay
+DEVICE_PACKAGE_OVERLAYS += device/qcom/msmnile_tb/overlay
 
 # Enable flag to support slow devices
 TARGET_PRESIL_SLOW_BOARD := true
@@ -239,6 +293,9 @@ endif
 #for Emac
 PRODUCT_PACKAGES += \
     emac_perf_settings.sh
+
+#for Emac
+PRODUCT_PACKAGES += emac_rps_settings.sh
 
 # CAN utils
 PRODUCT_PACKAGES += candump \
@@ -269,11 +326,49 @@ PRODUCT_PACKAGES += canflasher \
                     mpc5746c_firmware_B.bin \
                     vendor.qti.hardware.automotive.vehicle@1.0-service \
                     android.hardware.automotive.vehicle@2.0-manager-lib-shared
-#Thermal
-PRODUCT_PACKAGES += android.hardware.thermal@1.0-impl \
-                    android.hardware.thermal@1.0-service
+
+#add vndservicemanager for surfaceflinger crash
+PRODUCT_PACKAGES += vndservicemanager
+SHIPPING_API_LEVEL := 30
+PRODUCT_SHIPPING_API_LEVEL := 30
+
+#add for camera
+ENABLE_V4L2_CAMERA := true
+ifeq ($(ENABLE_V4L2_CAMERA), true)
+
+# Camera configuration file. Shared by passthrough/binderized camera HAL
+PRODUCT_PACKAGES += camera.device@1.0-impl
+PRODUCT_PACKAGES += camera.device@3.2-impl
+PRODUCT_PACKAGES += camera.device@3.3-impl
+PRODUCT_PACKAGES += camera.device@3.4-impl
+PRODUCT_PACKAGES += camera.device@3.4-external-impl
+PRODUCT_PACKAGES += camera.device@3.5-impl
+PRODUCT_PACKAGES += camera.device@3.5-external-impl
+PRODUCT_PACKAGES += android.hardware.camera.provider@2.4-external
+PRODUCT_PACKAGES += android.hardware.camera.provider@2.4-legacy
+PRODUCT_PACKAGES += android.hardware.camera.provider@2.4-impl
+# Enable binderized camera HAL
+PRODUCT_PACKAGES += android.hardware.camera.provider@2.4-service
+
+PRODUCT_PROPERTY_OVERRIDES += ro.hardware.camera=v4l2
+PRODUCT_PACKAGES += camera.v4l2
+endif
 
 TARGET_MOUNT_POINTS_SYMLINKS := false
+
+PRODUCT_PACKAGES += android.hardware.dumpstate@1.1-service.example \
+                    android.hardware.thermal@2.0-service.mock \
+
+PRODUCT_PACKAGES += android.hardware.health@2.1-service \
+                    android.hardware.health@2.1-impl \
+
+PRODUCT_PACKAGES += android.hardware.neuralnetworks@1.0.vendor \
+                    android.hardware.neuralnetworks@1.1.vendor \
+                    android.hardware.neuralnetworks@1.2.vendor \
+                    android.hardware.neuralnetworks@1.3.vendor
+
+# privapp-permissions whitelisting (To Fix CTS :privappPermissionsMustBeEnforced)
+PRODUCT_PROPERTY_OVERRIDES += ro.control_privapp_permissions=enforce
 
 ###################################################################################
 # This is the End of target.mk file.

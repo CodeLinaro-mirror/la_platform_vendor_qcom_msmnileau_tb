@@ -201,6 +201,9 @@ $(shell rm -f $(KERN_PATH)gen_headers_arm64.bp $(KERN_PATH)gen_headers_arm.bp)
 $(shell cp $(KERN_PATH)gen_headers_arm64_auto.bp $(KERN_PATH)gen_headers_arm64.bp)
 $(shell cp $(KERN_PATH)gen_headers_arm_auto.bp $(KERN_PATH)gen_headers_arm.bp)
 
+CAM_DEVICE_TREE_PATH := vendor/qcom/proprietary/camera-devicetree/
+$(shell ln -sf sa8155-camera-hal3.dtsi $(CAM_DEVICE_TREE_PATH)sa8155-camera.dtsi)
+
 MAX_EGL_CACHE_KEY_SIZE := 12*1024
 MAX_EGL_CACHE_SIZE := 2048*1024
 

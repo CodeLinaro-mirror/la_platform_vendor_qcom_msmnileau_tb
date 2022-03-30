@@ -15,8 +15,6 @@ persist.rild.nitz_short_ons_2=
 persist.rild.nitz_short_ons_3=
 ril.subscription.types=NV,RUIM
 DEVICE_PROVISIONED=1
-# Set network mode to (T/L/G/W/1X/EVDO, T/L/G/W/1X/EVDO) for 7+7 mode device on DSDS mode
-ro.telephony.default_network=22,22
 
 dalvik.vm.heapsize=36m
 dev.pm.dyn_samplingrate=1
@@ -36,6 +34,7 @@ media.stagefright.enable-aac=true
 media.stagefright.enable-qcp=true
 media.stagefright.enable-fma2dp=true
 media.stagefright.enable-scan=true
+media.stagefright.thumbnail.prefer_hw_codecs=true
 mmp.enable.3g2=true
 media.aac_51_output_enabled=true
 mm.enable.smoothstreaming=true
@@ -48,7 +47,7 @@ persist.mm.enable.prefetch=true
 #
 # system props for the data modules
 #
-ro.vendor.use_data_netmgrd=true
+ro.vendor.use_data_netmgrd=false
 persist.vendor.data.mode=concurrent
 
 #system props for time-services
@@ -65,10 +64,6 @@ ro.opengles.version=196610
 # system property for maximum number of HFP client connections
 bt.max.hfpclient.connections=1
 
-#
-# System props for telephony
-# System prop to turn on CdmaLTEPhone always
-telephony.lteOnCdmaDevice=1
 
 #Simulate sdcard on /data/media
 #
@@ -87,7 +82,9 @@ persist.vendor.btstack.enable.splita2dp=false
 persist.vendor.service.bdroid.sibs=false
 
 #system prop for Hardware type Automotive
-#ro.hardware.type=automotive
+#system prop for setting sensor hal
+ro.hardware.sensors=msmnile.asm_auto
+ro.hardware.type=automotive
 
 #
 #snapdragon value add features
@@ -201,3 +198,10 @@ persist.vendor.car.lpm=true
 
 # set BT AVRCP prop to false
 persist.bluetooth.enablenewavrcp=false
+#disable Telephony
+ro.radio.noril=true
+
+# default wifi country code
+ro.boot.wificountrycode=us
+
+ro.surface_flinger.protected_contents=true

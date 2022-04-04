@@ -76,6 +76,10 @@ BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := device/qcom/common/automotive
 USE_OPENGL_RENDERER := true
 BOARD_USE_LEGACY_UI := true
 
+#Disable AIS and disable SHDR pipeline for HAL3
+USE_IMAGING_AIS := false
+AIS_ISP_DISABLE_SHDR := true
+
 # Set Header version for bootimage
 #Disable appended dtb
 TARGET_KERNEL_APPEND_DTB := false

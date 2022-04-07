@@ -13,52 +13,26 @@ $(INSTALLED_BOOTLOADER_MODULE): $(TARGET_EMMC_BOOTLOADER) | $(ACP)
 $(BUILT_TARGET_FILES_PACKAGE): $(INSTALLED_BOOTLOADER_MODULE)
 
 droidcore: $(INSTALLED_BOOTLOADER_MODULE)
-droidcore_non_system: $(INSTALLED_BOOTLOADER_MODULE)
 endif
 
 # Create firmware folder for graphics
 $(shell mkdir -p $(TARGET_OUT_VENDOR)/firmware/)
-
-
-ifeq ($(TARGET_KERNEL_SOURCE),)
-     TARGET_KERNEL_SOURCE := kernel
-endif
-
-DTC := $(HOST_OUT_EXECUTABLES)/dtc$(HOST_EXECUTABLE_SUFFIX)
-UFDT_APPLY_OVERLAY := $(HOST_OUT_EXECUTABLES)/ufdt_apply_overlay$(HOST_EXECUTABLE_SUFFIX)
-
-# Record current directory to handle invoking sub-makes with -C
-# TODO(b/112561200) creating the TEMP_TOP variable undoes the intent of
-# removing ANDROID_BUILD_TOP, but it allows the build to succeed.
-TEMP_TOP=$(shell pwd)
-TARGET_KERNEL_MAKE_ENV := DTC_EXT=$(TEMP_TOP)/$(DTC)
-TARGET_KERNEL_MAKE_ENV += DTC_OVERLAY_TEST_EXT=$(TEMP_TOP)/$(UFDT_APPLY_OVERLAY)
-TARGET_KERNEL_MAKE_ENV += CONFIG_BUILD_ARM64_DT_OVERLAY=y
-TARGET_KERNEL_MAKE_ENV += HOSTCC=$(TEMP_TOP)/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8/bin/x86_64-linux-gcc
-TARGET_KERNEL_MAKE_ENV += HOSTAR=$(TEMP_TOP)/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8/bin/x86_64-linux-ar
-TARGET_KERNEL_MAKE_ENV += HOSTLD=$(TEMP_TOP)/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8/bin/x86_64-linux-ld
-TARGET_KERNEL_MAKE_ENV += HOSTCFLAGS="-I$$(pwd)/kernel/msm-4.14/include/uapi -I/usr/include -I/usr/include/x86_64-linux-gnu -L/usr/lib -L/usr/lib/x86_64-linux-gnu"
-TARGET_KERNEL_MAKE_ENV += HOSTLDFLAGS="-L/usr/lib -L/usr/lib/x86_64-linux-gnu"
-
-include $(TARGET_KERNEL_SOURCE)/AndroidKernel.mk
-$(TARGET_PREBUILT_KERNEL): $(DTC) $(UFDT_APPLY_OVERLAY)
-
-$(INSTALLED_KERNEL_TARGET): $(TARGET_PREBUILT_KERNEL) | $(ACP)
-	$(transform-prebuilt-to-target)
+#----------------------------------------------------------------------
+# Compile Linux Kernel
+#----------------------------------------------------------------------
+include device/qcom/kernelscripts/kernel_definitions.mk
 
 #----------------------------------------------------------------------
 # Copy additional target-specific files
 #----------------------------------------------------------------------
 include $(CLEAR_VARS)
 LOCAL_MODULE       := vold.fstab
-LOCAL_MODULE_TAGS  := optional
 LOCAL_MODULE_CLASS := ETC
 LOCAL_SRC_FILES    := $(LOCAL_MODULE)
 include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE       := init.target.rc
-LOCAL_MODULE_TAGS  := optional
 LOCAL_MODULE_CLASS := ETC
 LOCAL_SRC_FILES    := $(LOCAL_MODULE)
 LOCAL_MODULE_PATH  := $(TARGET_OUT_VENDOR_ETC)/init/hw
@@ -66,12 +40,24 @@ include $(BUILD_PREBUILT)
 
 include $(CLEAR_VARS)
 LOCAL_MODULE       := gpio-keys.kl
-LOCAL_MODULE_TAGS  := optional
 LOCAL_MODULE_CLASS := ETC
 LOCAL_SRC_FILES    := $(LOCAL_MODULE)
 LOCAL_MODULE_PATH  := $(TARGET_OUT_KEYLAYOUT)
 include $(BUILD_PREBUILT)
 
+ifeq ($(strip $(BOARD_DYNAMIC_PARTITION_ENABLE)),true)
+include $(CLEAR_VARS)
+LOCAL_MODULE       := fstab.qcom
+
+LOCAL_MODULE_CLASS := ETC
+ifeq ($(ENABLE_AB), true)
+  LOCAL_SRC_FILES := fstab_AB_dynamic_partition_variant.qti
+else
+  LOCAL_SRC_FILES := fstab_non_AB_dynamic_partition_variant.qti
+endif #ENABLE_AB
+LOCAL_MODULE_PATH  := $(TARGET_OUT_VENDOR_ETC)
+include $(BUILD_PREBUILT)
+else
 include $(CLEAR_VARS)
 LOCAL_MODULE       := fstab.qcom
 LOCAL_MODULE_TAGS  := optional
@@ -82,6 +68,7 @@ ifeq ($(ENABLE_VENDOR_IMAGE), true)
 LOCAL_POST_INSTALL_CMD := echo $(VENDOR_FSTAB_ENTRY) >> $(LOCAL_MODULE_PATH)/$(LOCAL_MODULE)
 endif
 include $(BUILD_PREBUILT)
+endif #BOARD_DYNAMIC_PARTITION_ENABLE
 
 #----------------------------------------------------------------------
 # Radio image
@@ -96,9 +83,7 @@ endif
 #----------------------------------------------------------------------
 # extra images
 #----------------------------------------------------------------------
-#ifeq (, $(wildcard vendor/qcom/build/tasks/generate_extra_images.mk))
-include device/qcom/common/generate_extra_images.mk
-#endif
+include vendor/qcom/opensource/core-utils/build/AndroidBoardCommon.mk
 
 #----------------------------------------------------------------------
 # wlan specific

@@ -35,6 +35,11 @@ PRODUCT_NAME := msmnile_tb
 PRODUCT_DEVICE := msmnile_tb
 PRODUCT_BRAND := qti
 PRODUCT_MODEL := msmnile_tb for arm64
+PRODUCT_MANUFACTURER := qti
+
+PRODUCT_VENDOR_PROPERTIES += \
+    ro.soc.manufacturer=$(PRODUCT_MANUFACTURER) \
+    ro.soc.model=$(PRODUCT_DEVICE)
 
 #Initial bringup flags
 

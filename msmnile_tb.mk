@@ -36,6 +36,10 @@ PRODUCT_DEVICE := msmnile_tb
 PRODUCT_BRAND := qti
 PRODUCT_MODEL := msmnile_tb for arm64
 
+TARGET_OUT_INTERMEDIATES := out/target/product/$(PRODUCT_NAME)/obj
+$(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr:
+	mkdir -p $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
+
 #Initial bringup flags
 
 #Default vendor image configuration

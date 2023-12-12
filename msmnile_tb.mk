@@ -30,3 +30,4 @@ PRODUCT_COPY_FILES += device/qcom/msmnile_tb/fstab_non_AB_dynamic_partition_vari
 endif
 
 PRODUCT_PACKAGES += android.hardware.lights-service.qti
+TARGET_USES_GAS := false
